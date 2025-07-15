@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""
-Reddit Persona Analyzer
-AI/LLM Engineer Intern Assignment - BeyondChats
-
-This script analyzes Reddit user profiles to generate comprehensive user personas
-with detailed behavioral descriptions similar to professional UX research.
-"""
-
 import os
 import re
 import json
@@ -22,10 +13,8 @@ from transformers import pipeline, AutoTokenizer
 import torch
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Configure logging
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -56,7 +45,6 @@ class RedditScraper:
     
     def extract_username(self, profile_url: str) -> str:
         """Extract username from Reddit profile URL."""
-        # Handle different URL formats
         patterns = [
             r'reddit\.com/user/([^/]+)',
             r'reddit\.com/u/([^/]+)',
@@ -80,7 +68,6 @@ class RedditScraper:
             
             logger.info(f"Scraping content for user: {username}")
             
-            # Get submissions (posts)
             try:
                 for submission in user.submissions.new(limit=limit//2):
                     if submission.selftext and len(submission.selftext.strip()) > 20:
@@ -96,7 +83,6 @@ class RedditScraper:
             except Exception as e:
                 logger.warning(f"Error fetching submissions: {e}")
             
-            # Get comments
             try:
                 for comment in user.comments.new(limit=limit//2):
                     if len(comment.body.strip()) > 20 and comment.body != '[deleted]':
@@ -127,7 +113,6 @@ class PersonaAnalyzer:
         """Initialize the analyzer with free Hugging Face models and optimal device selection."""
         logger.info("Initializing AI models with GPU acceleration...")
         
-        # Detect and configure optimal device
         self.device_info = self._setup_optimal_device()
         self.device = self.device_info['device']
         
@@ -135,7 +120,6 @@ class PersonaAnalyzer:
         if self.device_info['memory_gb']:
             logger.info(f"💾 Available GPU memory: {self.device_info['memory_gb']:.1f} GB")
         
-        # Load models with device optimization
         self._load_text_generation_model()
         self._load_sentiment_model()
         self._load_classification_model()
@@ -151,13 +135,11 @@ class PersonaAnalyzer:
             'memory_gb': None
         }
         
-        # Check for CUDA GPU
         if torch.cuda.is_available():
             try:
                 gpu_count = torch.cuda.device_count()
                 gpu_name = torch.cuda.get_device_name(0)
                 
-                # Get GPU memory info
                 gpu_memory = torch.cuda.get_device_properties(0).total_memory
                 gpu_memory_gb = gpu_memory / (1024**3)  # Convert to GB
                 
@@ -170,7 +152,6 @@ class PersonaAnalyzer:
                         'memory_gb': gpu_memory_gb
                     })
                     
-                    # Set memory fraction to avoid OOM
                     torch.cuda.set_per_process_memory_fraction(0.8)  # Use 80% of GPU memory
                     logger.info(f"🎯 GPU detected: {gpu_name} with {gpu_memory_gb:.1f}GB memory")
                 else:
@@ -179,7 +160,6 @@ class PersonaAnalyzer:
             except Exception as e:
                 logger.warning(f"⚠️ GPU detection failed: {e}, falling back to CPU")
         
-        # Check for MPS (Apple Silicon)
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
             try:
                 device_info.update({
@@ -217,7 +197,6 @@ class PersonaAnalyzer:
                 except Exception as e:
                     logger.warning(f"Failed to load large model on GPU: {e}")
             
-            # Fallback to base model or CPU
             model_name = "google/flan-t5-base" if self.device_info['memory_gb'] and self.device_info['memory_gb'] < 6 else "google/flan-t5-large"
             
             self.generator = pipeline(
@@ -246,7 +225,6 @@ class PersonaAnalyzer:
             logger.info("✅ Sentiment analysis model loaded")
         except Exception as e:
             logger.warning(f"⚠️ Sentiment model loading failed: {e}")
-            # Create a fallback
             self.sentiment_analyzer = None
     
     def _load_classification_model(self):
@@ -261,7 +239,6 @@ class PersonaAnalyzer:
             logger.info("✅ Classification model loaded")
         except Exception as e:
             logger.warning(f"⚠️ Classification model loading failed: {e}")
-            # Create a fallback
             self.classifier = None
     
     def get_device_info(self) -> str:
@@ -281,7 +258,6 @@ class PersonaAnalyzer:
         
         categorized_interests = defaultdict(list)
         
-        # Use AI classifier if available, otherwise use keyword matching
         if self.classifier:
             for post in posts[:20]:  # Analyze top posts
                 try:
@@ -293,7 +269,6 @@ class PersonaAnalyzer:
                     logger.debug(f"Classification error: {e}")
                     continue
         else:
-            # Fallback to keyword-based analysis
             logger.info("Using keyword-based interest analysis (classifier unavailable)")
             keyword_map = {
                 'technology': ['tech', 'software', 'programming', 'code', 'AI', 'computer'],
@@ -316,7 +291,6 @@ class PersonaAnalyzer:
         """Analyze personality traits from content."""
         traits = {}
         
-        # Analyze sentiment patterns (with fallback if model unavailable)
         sentiments = []
         if self.sentiment_analyzer:
             for post in posts[:30]:
@@ -327,7 +301,6 @@ class PersonaAnalyzer:
                     logger.debug(f"Sentiment analysis failed for post: {e}")
                     continue
         
-        # Determine personality based on sentiment patterns
         if sentiments:
             positive_ratio = sentiments.count('LABEL_2') / len(sentiments)  # Positive
             if positive_ratio > 0.6:
@@ -335,7 +308,6 @@ class PersonaAnalyzer:
             elif positive_ratio < 0.3:
                 traits['Pessimism'] = ('Moderate', [p.url for p in posts[:3]])
         
-        # Analyze communication style
         avg_length = sum(len(p.content) for p in posts) / len(posts) if posts else 0
         if avg_length > 300:
             traits['Detailed Communication'] = ('High', [p.url for p in posts[:2]])
@@ -348,7 +320,6 @@ class PersonaAnalyzer:
         """Analyze structured demographic information for infographics."""
         all_content = ' '.join([post.content.lower() for post in posts])
         
-        # Age inference
         age_indicators = {
             'teens': ['school', 'homework', 'parents', 'high school'],
             'early_20s': ['college', 'university', 'dorm', 'student'],
@@ -373,7 +344,6 @@ class PersonaAnalyzer:
         likely_age = max(age_scores, key=age_scores.get) if age_scores else 'late_20s_early_30s'
         age_range = age_mapping.get(likely_age, '25-35')
         
-        # Occupation inference
         occupation_keywords = {
             'Technology Professional': ['programming', 'coding', 'software', 'developer', 'tech', 'engineer'],
             'Content Creator': ['design', 'art', 'creative', 'content', 'marketing', 'writer'],
@@ -389,7 +359,6 @@ class PersonaAnalyzer:
         
         occupation = max(occupation_scores, key=occupation_scores.get) if occupation_scores else 'Professional'
         
-        # Tech adoption level
         tech_indicators = {
             'Early Adopter': ['beta', 'new feature', 'cutting edge', 'latest', 'first'],
             'Mainstream': ['popular', 'everyone uses', 'standard', 'common'],
@@ -403,7 +372,6 @@ class PersonaAnalyzer:
         
         tech_adoption = max(tech_scores, key=tech_scores.get) if tech_scores else 'Mainstream'
         
-        # User archetype
         archetype_indicators = {
             'The Creator': ['create', 'build', 'make', 'design', 'art'],
             'The Explorer': ['try', 'new', 'discover', 'adventure', 'explore'],
@@ -446,7 +414,6 @@ class PersonaAnalyzer:
         
         for motivation, indicators in motivation_indicators.items():
             raw_score = sum(all_content.count(indicator) for indicator in indicators)
-            # Convert to meaningful scale
             bonus_score = min(raw_score * 8, 60)  # Cap bonus at 60
             final_score = min(base_score + bonus_score, 100)
             motivation_scores[motivation] = final_score
@@ -470,7 +437,6 @@ class PersonaAnalyzer:
         else:
             introvert_extrovert = 50
         
-        # Intuition vs Sensing
         intuition_words = ['possibility', 'future', 'theory', 'concept', 'idea', 'imagine']
         sensing_words = ['fact', 'detail', 'practical', 'experience', 'real', 'concrete']
         
@@ -483,7 +449,6 @@ class PersonaAnalyzer:
         else:
             intuition_sensing = 65  # Slight sensing bias
         
-        # Feeling vs Thinking
         feeling_words = ['feel', 'emotion', 'heart', 'personal', 'values']
         thinking_words = ['logic', 'analyze', 'reason', 'objective', 'efficiency']
         
@@ -496,7 +461,6 @@ class PersonaAnalyzer:
         else:
             feeling_thinking = 45  # Slight feeling bias
         
-        # Perceiving vs Judging
         perceiving_words = ['flexible', 'spontaneous', 'open', 'adapt', 'explore']
         judging_words = ['plan', 'schedule', 'deadline', 'organize', 'structure']
         
@@ -539,11 +503,9 @@ class PersonaAnalyzer:
             if score > 0:
                 trait_scores[trait] = score
         
-        # Return top 4 traits, with defaults if needed
         top_traits = sorted(trait_scores.items(), key=lambda x: x[1], reverse=True)[:4]
         
         if len(top_traits) < 4:
-            # Add default traits to fill to 4
             default_traits = ['Active', 'Curious', 'Social', 'Adaptable']
             existing_traits = [trait for trait, _ in top_traits]
             for default in default_traits:
@@ -560,36 +522,29 @@ class PersonaAnalyzer:
             'goals': []
         }
         
-        # Analyze subreddit patterns
         subreddit_activity = defaultdict(int)
         for post in posts:
             subreddit_activity[post.subreddit] += 1
         
         top_communities = sorted(subreddit_activity.items(), key=lambda x: x[1], reverse=True)[:3]
         
-        # Generate behavior insights based on community participation
         if top_communities:
             main_community, count = top_communities[0]
             
-            # Gaming behavior patterns
             if any(keyword in main_community.lower() for keyword in ['game', 'gaming', 'civ', 'lords', 'warriors']):
                 insights['behaviors'].append(f"Actively participates in gaming communities, spending considerable time in r/{main_community} discussing strategy, gameplay mechanics, and sharing experiences with fellow gamers.")
                 insights['behaviors'].append(f"Shows dedication to specific games by maintaining regular engagement, with {count} interactions in their primary gaming community.")
             
-            # Tech/VR behavior
             if 'visionpro' in main_community.lower() or 'tech' in main_community.lower():
                 insights['behaviors'].append(f"Early adopter of new technology, particularly interested in VR/AR experiences and regularly shares content about cutting-edge tech products.")
             
-            # Question-asking behavior
             if 'ask' in main_community.lower():
                 insights['behaviors'].append("Frequently seeks advice and information from online communities, demonstrating a preference for crowdsourced knowledge and diverse perspectives.")
         
-        # Analyze posting times and frequency
         post_frequency = len(posts)
         if post_frequency > 40:
             insights['behaviors'].append("Maintains a highly active online presence with consistent engagement across multiple communities and topics.")
         
-        # Analyze content for frustrations
         frustration_indicators = ['annoying', 'frustrating', 'hate', 'stupid', 'broken', 'terrible', 'worst', 'confusing', 'unclear']
         problem_content = []
         
@@ -604,7 +559,6 @@ class PersonaAnalyzer:
             if any('menu' in p.content.lower() or 'interface' in p.content.lower() for p in problem_content):
                 insights['frustrations'].append("Finds complex or confusing menu systems particularly irritating, especially when trying to find specific features or content.")
         
-        # Analyze for goals and aspirations
         goal_indicators = ['want', 'hope', 'goal', 'trying', 'learning', 'improve', 'better', 'wish', 'looking for']
         goal_content = []
         
@@ -617,15 +571,12 @@ class PersonaAnalyzer:
             insights['goals'].append("Seeks to optimize and enhance their digital experiences through community knowledge sharing and staying informed about best practices.")
             insights['goals'].append("Wants to make informed decisions about technology purchases and entertainment choices by leveraging community insights and reviews.")
             
-            # Gaming-specific goals
             if any('game' in p.content.lower() for p in goal_content):
                 insights['goals'].append("Aims to improve their gaming skills and strategies through community discussion and learning from experienced players.")
         
-        # Technology usage goals
         if any(keyword in ' '.join([p.content.lower() for p in posts[:20]]) for keyword in ['efficiency', 'productive', 'organize']):
             insights['goals'].append("Strives to use technology more efficiently and productively in their daily life and work routines.")
         
-        # Default insights if content is insufficient
         if not insights['behaviors']:
             insights['behaviors'].append("Engages regularly with online communities, showing consistent participation patterns and genuine interest in connecting with like-minded individuals.")
             insights['behaviors'].append("Demonstrates thoughtful communication by contributing meaningful content and asking relevant questions to community discussions.")
@@ -652,23 +603,19 @@ class PersonaGenerator:
         if not posts:
             return f"Unable to generate persona for {username} - insufficient data."
         
-        # Analyze data
         interests = self.analyzer.analyze_topics_and_interests(posts)
         personality = self.analyzer.analyze_personality_traits(posts)
         behavioral_insights = self.analyzer.generate_behavioral_insights(posts)
         
-        # NEW: Add professional infographics data
         demographics = self.analyzer.analyze_structured_demographics(posts)
         motivations = self.analyzer.analyze_motivations(posts)
         personality_dims = self.analyzer.analyze_personality_dimensions_visual(posts)
         trait_tags = self.analyzer.generate_trait_tags(posts)
         
-        # Extract insights
         top_subreddits = self._get_top_subreddits(posts)
         activity_pattern = self._analyze_activity_pattern(posts)
         representative_quote = self._find_representative_quote(posts)
         
-        # Generate persona document
         persona = self._format_enhanced_persona_document(
             username, posts, interests, personality, behavioral_insights,
             top_subreddits, activity_pattern, representative_quote, 
@@ -698,10 +645,8 @@ class PersonaGenerator:
     
     def _find_representative_quote(self, posts: List[RedditPost]) -> Tuple[str, str]:
         """Find a representative quote from user's content."""
-        # Find highest-scored substantial content
         for post in sorted(posts, key=lambda x: x.score, reverse=True):
             if len(post.content) > 50 and len(post.content) < 300:
-                # Clean up the quote
                 quote = post.content.replace('\n', ' ').strip()
                 if len(quote) > 150:
                     quote = quote[:147] + "..."
@@ -749,7 +694,6 @@ Analysis Date: {current_time}
 🎯 BEHAVIOUR & HABITS
 ═══════════════════════════════════════════════════════════════════════════════"""
 
-        # Add behavioral insights
         for behavior in behavioral_insights['behaviors']:
             persona += f"\n• {behavior}\n"
 
@@ -757,7 +701,6 @@ Analysis Date: {current_time}
 😤 FRUSTRATIONS
 ═══════════════════════════════════════════════════════════════════════════════"""
 
-        # Add frustrations
         for frustration in behavioral_insights['frustrations']:
             persona += f"\n• {frustration}\n"
 
@@ -765,7 +708,6 @@ Analysis Date: {current_time}
 🎯 GOALS & NEEDS
 ═══════════════════════════════════════════════════════════════════════════════"""
 
-        # Add goals
         for goal in behavioral_insights['goals']:
             persona += f"\n• {goal}\n"
 
@@ -773,7 +715,6 @@ Analysis Date: {current_time}
 📊 PERSONALITY TRAITS
 ═══════════════════════════════════════════════════════════════════════════════"""
 
-        # Add personality traits
         if personality:
             for trait, (level, citations) in personality.items():
                 persona += f"\n• {trait}: {level}"
@@ -810,7 +751,6 @@ LEARNING           {self._create_progress_bar(motivations['learning'])}
 🏷️ PERSONALITY TAGS
 ───────────────────────────────────────────────────────────────────────────────"""
 
-        # Add trait tags
         for i in range(0, len(trait_tags), 4):
             row_tags = trait_tags[i:i+4]
             tag_line = "  ".join([f"[{tag}]" for tag in row_tags])
@@ -853,7 +793,6 @@ Processing Device: {analyzer.get_device_info()}
 
 Recent Activity Sources:"""
 
-        # Add citation links
         for i, post in enumerate(posts[:5]):
             persona += f"\n{i+1}. {post.post_type.title()}: {post.url}"
 
@@ -875,7 +814,6 @@ def main():
     parser.add_argument('--limit', type=int, default=100, help='Number of posts to analyze')
     args = parser.parse_args()
     
-    # Reddit API credentials (get from environment or config)
     client_id = os.getenv('REDDIT_CLIENT_ID', 'your_client_id_here')
     client_secret = os.getenv('REDDIT_CLIENT_SECRET', 'your_client_secret_here')
     user_agent = os.getenv('REDDIT_USER_AGENT', 'PersonaAnalyzer/1.0 by YourUsername')
@@ -886,12 +824,10 @@ def main():
         return
     
     try:
-        # Initialize components
         scraper = RedditScraper(client_id, client_secret, user_agent)
         analyzer = PersonaAnalyzer()
         generator = PersonaGenerator(analyzer)
         
-        # Extract username and scrape data
         username = scraper.extract_username(args.profile_url)
         logger.info(f"Analyzing user: {username}")
         
@@ -901,10 +837,8 @@ def main():
             logger.error(f"No content found for user {username}")
             return
         
-        # Generate persona
         persona = generator.generate_persona(username, posts)
         
-        # Save to file
         output_filename = f"{username}_persona.txt"
         with open(output_filename, 'w', encoding='utf-8') as f:
             f.write(persona)

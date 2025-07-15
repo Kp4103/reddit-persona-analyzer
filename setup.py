@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""
-One-Click Setup Script for Reddit Persona Analyzer
-AI/LLM Engineer Intern Assignment - BeyondChats
-
-This script automates the entire setup process for evaluators.
-Just run: python setup.py
-"""
-
 import os
 import subprocess
 import sys
@@ -25,11 +16,9 @@ def install_requirements():
     """Install required packages."""
     print("\n🔧 Installing required packages...")
     try:
-        # Upgrade pip first
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], 
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
-        # Install requirements
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
         print("✅ All dependencies installed successfully!")
         return True
@@ -89,7 +78,6 @@ def run_test():
     """Test the setup with sample user."""
     print("\n🧪 Testing setup with sample user...")
     try:
-        # Quick test to see if we can import main modules
         import praw
         from transformers import pipeline
         print("✅ All modules imported successfully!")
@@ -109,22 +97,17 @@ def main():
     print("AI/LLM Engineer Intern Assignment - BeyondChats")
     print("="*60)
     
-    # System checks
     if not check_python_version():
         return
     
-    # Install dependencies
     print(f"\n🖥️  System: {platform.system()} {platform.release()}")
     deps_ok = install_requirements()
     
     if deps_ok:
-        # Check GPU after installation
         check_gpu_availability()
     
-    # Setup environment
     env_needs_config = not setup_env_file()
     
-    # Final status
     print("\n" + "="*60)
     if deps_ok and not env_needs_config:
         print("🎉 SETUP COMPLETE! Ready to analyze Reddit profiles.")
@@ -132,7 +115,6 @@ def main():
         print("python main.py https://www.reddit.com/user/kojied/")
         print("python main.py https://www.reddit.com/user/Hungry-Move-6603/")
         
-        # Quick test
         run_test()
         
     elif deps_ok and env_needs_config:
