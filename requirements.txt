@@ -1,0 +1,22 @@
+# Reddit Persona Analyzer Dependencies
+# All libraries are free and open-source
+
+# Reddit API access
+praw==7.7.1
+
+# AI/ML libraries (free Hugging Face models)
+transformers==4.35.2
+torch==2.1.1
+tokenizers==0.15.0
+
+# NLP and data processing
+numpy==1.24.3
+scipy==1.11.4
+
+# Utility libraries
+python-dotenv==1.0.0
+requests==2.31.0
+
+# Development and formatting
+black==23.9.1
+flake8==6.1.0
