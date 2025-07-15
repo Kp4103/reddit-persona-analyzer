@@ -224,7 +224,7 @@ logging.basicConfig(level=logging.DEBUG)
 ## 📄 License
 
 This code is developed for the BeyondChats AI/LLM Engineer Intern assignment. 
-The developer retains ownership unless selected for the paid internship position.
+The developer retains ownership unless selected.
 
 ---
 
