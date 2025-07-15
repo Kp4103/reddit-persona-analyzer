@@ -40,7 +40,7 @@ This will:
 
 ### 1. Clone the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Kp4103/reddit-persona-analyzer.git
 cd reddit-persona-analyzer
 ```
 
@@ -78,24 +78,7 @@ REDDIT_CLIENT_SECRET=your_client_secret_here
 REDDIT_USER_AGENT=PersonaAnalyzer/1.0 by YourRedditUsername
 ```
 
-**Alternative**: You can also edit the credentials directly in `main.py` (lines 330-332).
-
 ## 🎯 Usage
-
-### Testing GPU Performance (Optional)
-```bash
-python test_gpu.py
-```
-
-This will show you:
-- Available GPU devices and memory
-- Model loading performance comparison  
-- Expected speedup from GPU acceleration
-
-### Enhanced Version with Rich Behavioral Insights
-```bash
-python main_enhanced.py https://www.reddit.com/user/kojied/
-```
 
 ### Basic Usage
 ```bash
@@ -118,7 +101,9 @@ python main.py https://www.reddit.com/user/Hungry-Move-6603/ --limit 150
 The script generates a professional persona file named `{username}_persona.txt` containing:
 
 - **Demographics & Overview**: Activity patterns, primary communities
-- **Personality Traits**: AI-analyzed characteristics with confidence levels
+- **Behavioral Insights**: AI-analyzed behavior patterns and habits
+- **Personality Traits**: Characteristics with confidence levels and citations
+- **Motivations**: Scored motivation analysis with visual progress bars
 - **Interests & Activities**: Categorized interests from content analysis
 - **Representative Quote**: Authentic statement from user's content
 - **Activity Analysis**: Community engagement patterns
@@ -183,7 +168,7 @@ Every persona characteristic includes:
 **2. Model Loading Issues**
 - Free up RAM (models require 2-4GB)
 - Close other applications
-- Use the smaller fallback models
+- Consider using CPU if GPU memory is insufficient
 
 **3. No Content Found**
 - User might have deleted posts
@@ -232,13 +217,9 @@ logging.basicConfig(level=logging.DEBUG)
 - Zero external costs
 - Public GitHub repository
 
-## 🔮 Future Enhancements
+## 🔗 Repository
 
-- Support for additional social platforms
-- Enhanced personality analysis models
-- Interactive persona visualization
-- Batch processing capabilities
-- Export to different formats (PDF, JSON)
+**GitHub Repository**: [https://github.com/Kp4103/reddit-persona-analyzer](https://github.com/Kp4103/reddit-persona-analyzer)
 
 ## 📄 License
 
